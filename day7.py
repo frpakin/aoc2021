@@ -8,13 +8,6 @@ with open("day7-s.txt") as f:
 
 def part1(data):
     crabs = {}
-
-    def part1_sub(crabs, p):
-        fuel = 0
-        for c in crabs.keys():
-            fuel += abs(c-p)*crabs[c]
-        return fuel
-
     for d in data:
         v=crabs.get(d,0)
         crabs[d]=v+1
@@ -22,7 +15,10 @@ def part1(data):
     fuels = {}
     with progressbar.ProgressBar(min_value = pos_min, max_value=pox_max+1) as bar:
         for p in range(pos_min, pox_max+1):
-            fuels[p] = part1_sub(crabs, p)
+            fuel = 0
+            for c in crabs.keys():
+                fuel += abs(c-p)*crabs[c]
+            fuels[p] = fuel
             bar.update(p)
     return min(fuels.values())
 
