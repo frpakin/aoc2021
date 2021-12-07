@@ -33,9 +33,11 @@ def part2(data):
     def part2_sub(crabs, p):
         fuel = 0
         for c in crabs.keys():
-            cpt = 0
-            for i in range(0, max(c, p)-min(c, p) + 1):
-                cpt += i
+            #cpt = 0
+            #for i in range(0, max(c, p)-min(c, p) + 1):
+            #    cpt += i
+            n = max(c, p)-min(c, p)
+            cpt = (n*n+n)//2
             fuel += cpt*crabs[c]
         return fuel
 

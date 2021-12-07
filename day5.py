@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import re
 import math
 import matplotlib.pyplot as plt
@@ -17,15 +16,6 @@ def day5_load(fname):
     
 
 def part1(segs, limit=2):
-    def textvisualize(points):
-        for l in range(10):
-            row = ""
-            for c in range(10):
-                v=points.get((c,l), 0)
-                c = '.' if v==0 else str(v)
-                row += c
-            print(row)
-
     points = {}
     for s in segs:
         if s[0] == s[2]:
@@ -40,6 +30,14 @@ def part1(segs, limit=2):
     for k in points.keys():
         if points[k] >= limit:
             cpt += 1
+
+    #for l in range(10):
+    #    row = ""
+    #    for c in range(10):
+    #        v=points.get((c,l), 0)
+    #        c = '.' if v==0 else str(v)
+    #        row += c
+    #    print(row)
     return cpt
 
 
@@ -72,19 +70,26 @@ def part2(segs, limit=2):
 
 
 if __name__ == "__main__":
-    fname = "day5-bs.txt"
+    fname = "day5-bs.txt";
     SEGS = day5_load(fname)
-    
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    for s in SEGS:
+        ax1.plot( (s[0], s[2]), (s[1], s[3]), c='b')
     ret = part1(SEGS)
     print("Part 1 {:s} {:d} (5)".format(fname, ret))
     ret = part2(SEGS)
     print("Part 2 {:s} {:d} (12)".format(fname, ret))
 
-    fname = "day5-s.txt"
+    fname = "day5-s.txt";
     SEGS = day5_load(fname)
-    for s in SEGS: plt.plot(s[0], s[1], s[2], s[3])
+    for s in SEGS:
+        ax2.plot( (s[0], s[1]), (s[2], s[3]), c='b')
+    ax1.set_ylim(ax1.get_ylim()[::-1])       # invert the axis
+    ax1.xaxis.tick_top()                     # and move the X-Axis      
+    ax2.set_ylim(ax2.get_ylim()[::-1])       # invert the axis
+    ax2.xaxis.tick_top()                     # and move the X-Axis          
     plt.show()
-
+    
     ret = part1(SEGS)
     print("Part 1 {:s} {:d} (5294)".format(fname, ret))
     ret = part2(SEGS)
