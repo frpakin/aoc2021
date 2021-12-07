@@ -1,5 +1,7 @@
+#!/usr/bin/env python
 import re
 import math
+import matplotlib.pyplot as plt
 
 
 def day5_load(fname):
@@ -15,6 +17,15 @@ def day5_load(fname):
     
 
 def part1(segs, limit=2):
+    def textvisualize(points):
+        for l in range(10):
+            row = ""
+            for c in range(10):
+                v=points.get((c,l), 0)
+                c = '.' if v==0 else str(v)
+                row += c
+            print(row)
+
     points = {}
     for s in segs:
         if s[0] == s[2]:
@@ -29,14 +40,6 @@ def part1(segs, limit=2):
     for k in points.keys():
         if points[k] >= limit:
             cpt += 1
-
-    for l in range(10):
-        row = ""
-        for c in range(10):
-            v=points.get((c,l), 0)
-            c = '.' if v==0 else str(v)
-            row += c
-        print(row)
     return cpt
 
 
@@ -69,16 +72,20 @@ def part2(segs, limit=2):
 
 
 if __name__ == "__main__":
-    fname = "day5-bs.txt";
+    fname = "day5-bs.txt"
     SEGS = day5_load(fname)
+    
     ret = part1(SEGS)
     print("Part 1 {:s} {:d} (5)".format(fname, ret))
     ret = part2(SEGS)
     print("Part 2 {:s} {:d} (12)".format(fname, ret))
 
-    fname = "day5-s.txt";
+    fname = "day5-s.txt"
     SEGS = day5_load(fname)
+    for s in SEGS: plt.plot(s[0], s[1], s[2], s[3])
+    plt.show()
+
     ret = part1(SEGS)
-    print("Part 1 {:s} {:d} (?)".format(fname, ret))
+    print("Part 1 {:s} {:d} (5294)".format(fname, ret))
     ret = part2(SEGS)
-    print("Part 2 {:s} {:d} (?)".format(fname, ret))
+    print("Part 2 {:s} {:d} (21698)".format(fname, ret))
