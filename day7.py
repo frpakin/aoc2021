@@ -1,4 +1,4 @@
-import progressbar
+from tqdm import tqdm
 
 
 with open("day7-s.txt") as f:
@@ -13,13 +13,12 @@ def part1(data):
         crabs[d]=v+1
     pos_min, pox_max = min(crabs.keys()), max(crabs.keys())
     fuels = {}
-    with progressbar.ProgressBar(min_value = pos_min, max_value=pox_max+1) as bar:
-        for p in range(pos_min, pox_max+1):
-            fuel = 0
-            for c in crabs.keys():
-                fuel += abs(c-p)*crabs[c]
-            fuels[p] = fuel
-            bar.update(p)
+    for p in tqdm(range(pos_min, pox_max+1)):
+        fuel = 0
+        for c in crabs.keys():
+            fuel += abs(c-p)*crabs[c]
+        fuels[p] = fuel
+
     return min(fuels.values())
 
 
@@ -42,10 +41,9 @@ def part2(data):
         crabs[d]=v+1
     pos_min, pox_max = min(crabs.keys()), max(crabs.keys())
     fuels = {}
-    with progressbar.ProgressBar(min_value = pos_min, max_value=pox_max+1) as bar:
-        for p in range(pos_min, pox_max+1):
-            fuels[p] = part2_sub(crabs, p)
-            bar.update(p)
+    for p in tqdm(range(pos_min, pox_max+1)):
+        fuels[p] = part2_sub(crabs, p)
+            
     return min(fuels.values())
 
 if __name__ == "__main__":

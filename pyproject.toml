@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "aoc2021"
+version = "0.1.0"
+description = "Advent of Code 2021 !"
+authors = ["frpakin <fpakin@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.11"
+numpy = "^1.21.4"
+tqdm = "^4.62.3"
+matplotlib = "^3.5.0"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
