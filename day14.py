@@ -1,4 +1,7 @@
 from tqdm import tqdm
+import itertools, sys
+spinner = itertools.cycle(['-', '/', '|', '\\'])
+
 
 def day14_load(fname):
     rules = {}
@@ -28,13 +31,19 @@ def part1(seed, rules, max_step=1):
 
 def part2(seed, rules, vals, max_step=40):
     counts = dict.fromkeys(vals, 0)
-    r10 = {}
-    for r in rules.keys():
-        r10[r] = part1([r], rules, 20)
-        day14_print(r10[r], vals)
-    r40 = part1(seed, r10, 2)
-    ret = part1(seed, r40, 1)
-    return ret
+    
+    if max_step ==0:
+        for p in seed:
+            counts[p[0]] += 1
+        counts[seed[-1][1]] += 1            
+    else :
+        for s in seed:
+            c = part2(rules[s], rules, vals, max_step-1)
+            for k in c.keys():
+                counts[k] += c[k]
+    if max_step in [20, 30, 32, 35, 36, 37, 38, 39, 40] :
+        print(max_step, counts)
+    return counts
 
 
 def day14_print(pairs, vals):
@@ -73,7 +82,7 @@ if __name__ == "__main__":
     print("Part 2 {:s} {:d} {:d} (1588)".format(fname, len(prot)+1, part1_result(prot)))
     fname = "day14-s.txt";
     SEED, RULES, VALS = day14_load(fname)
-    prot = part2(SEED, RULES, VALS, 40)
+    prot = part1(SEED, RULES, 40)
     print("Part 2 {:s} {:d} {:d} (2010)".format(fname, len(prot)+1, part1_result(prot)))
 
 
