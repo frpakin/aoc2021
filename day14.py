@@ -32,38 +32,19 @@ def part1(seed, rules, max_step=1):
 def part2(seed, rules, vals, max_step=40):
     c20 = {}
     for k in rules.keys():
-        r20 = part1([k], rules, 9)
+        r20 = part1([k], rules, max_step //2)
         alpha = {}
         for p in r20:
             alpha[p[0]] = alpha.get(p[0], 0) + 1
-        alpha[r20[-1][1]] = alpha.get(r20[-1][1], 0) + 1
+        #alpha[r20[-1][1]] = alpha.get(r20[-1][1], 0) + 1
         c20[k] = alpha
-    ret = part1(seed, rules, 1)
+    ret = part1(seed, rules, max_step //2)
     #ret = seed
     counts = {}
     for p in tqdm(ret):
         for k in c20[p].keys():
             counts[k] = counts.get(k, 0) + c20[p][k]
-    for s in seed[1:]:
-        counts[s[0]] += -1
-        counts[s[1]] += -1
-    return counts
-
-
-def part3(seed, rules, vals, max_step=40):
-    counts = dict.fromkeys(vals, 0)
-    
-    if max_step ==0:
-        for p in seed:
-            counts[p[0]] += 1
-        counts[seed[-1][1]] += 1            
-    else :
-        for s in seed:
-            c = part2(rules[s], rules, vals, max_step-1)
-            for k in c.keys():
-                counts[k] += c[k]
-    if max_step in [20, 30, 32, 35, 36, 37, 38, 39, 40] :
-        print(max_step, counts)
+    counts[seed[-1][-1]] += 1
     return counts
 
 
@@ -104,18 +85,12 @@ if __name__ == "__main__":
 
     fname = "day14-bs.txt";
     SEED, RULES, VALS = day14_load(fname)
-    prot = part2(SEED, RULES, VALS, 10)
-    print("Part 2 {:s} {:d} {:d} (2188189693529)".format(fname, len(prot)+1, part2_result(prot)))
-    print(prot)
-
-    fname = "day14-bs.txt";
-    SEED, RULES, VALS = day14_load(fname)
     prot = part2(SEED, RULES, VALS, 40)
     print("Part 2 {:s} {:d} {:d} (2188189693529)".format(fname, len(prot)+1, part2_result(prot)))
     print(prot)
     fname = "day14-s.txt";
     SEED, RULES, VALS = day14_load(fname)
     prot = part2(SEED, RULES, 40)
-    print("Part 2 {:s} {:d} {:d} (?)".format(fname, len(prot)+1, part2_result(prot)))
+    print("Part 2 {:s} {:d} {:d} (2437698971143)".format(fname, len(prot)+1, part2_result(prot)))
     print(prot)
 
