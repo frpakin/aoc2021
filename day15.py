@@ -1,4 +1,6 @@
 import numpy as np
+from numpy.core.fromnumeric import shape
+from numpy.lib.function_base import i0
 from tqdm import tqdm
 
 def day15_load(fname):
@@ -7,25 +9,62 @@ def day15_load(fname):
     return np.array([ [ int(c) for c in l.strip() ] for l in ll ], dtype=np.int8)
 
 
-def part1(m):
-    results = []
-    GLOBAL_MIN = 2**20
-    def part1_sub(m, start, end, path, cost):
-        global GLOBAL_MIN
-        if start == end:
-            results.append(cost, path)
-            if cost < GLOBAL_MIN:
-                GLOBAL_MIN = cost
-            return m[end]
-        else:
-            for p in adj and not in path:
-                if m[p] + cost < GLOBAL_MIN:
-                    part1_sub(m, start, end, path, cost)
-        return p
+def adj_finder(m, l, c):
+    adj = []
+    if l > 0:
+        adj.append((l-1,c))
+    if l+1 < m.shape[0]:
+        adj.append((l+1,c))
+    if c > 0:
+        adj.append((l,c-1))
+    if c+1 < m.shape[1]:
+        adj.append((l,c+1))
+    return adj
 
-    path = part1_sub(m, (0,0), m.shape, [], 0)
-    ret = 0
-    return ret
+
+
+def part1(m):
+    costs = [ 0 for _ in range(m.shape[0])]
+    for i in range(m.shape[0]):
+        costs[i] = np.sum(M, axis=0)[i]
+        for j in range(i):
+            costs[i] += m[0, j]
+        for j in range(i, m.shape[1]):
+            costs[i] += m[0, j]
+    GLOBAL_MIN = min(costs)
+    for i in range(m.shape[1]):
+        costs[i] = np.sum(M, axis=1)[i]
+        for j in range(i):
+            costs[i] += m[j, 0]
+        for j in range(i, m.shape[0]):
+            costs[i] += m[j, 0]
+    GLOBAL_MIN = min(GLOBAL_MIN, min(costs))
+    start=(0,0)
+    end = (m.shape[0]-1, m.shape[1]-1)
+    results = {}
+    next = [ [start] ]
+    costs = [ 0 ]
+    while len(next) != 0:
+        new = []
+        costs_new = []
+        for i in range(len(next)):
+            cost = costs[i]
+            if cost < GLOBAL_MIN:
+                path = next[i]
+                if path[-1] == end:
+                    results[cost] = path
+                    if cost < GLOBAL_MIN:
+                        print("Part 1 {:d} -> {:d}".format(GLOBAL_MIN, cost))
+                        GLOBAL_MIN = cost
+                else:
+                    for a in adj_finder(m, path[-1][0], path[-1][1]):
+                        if a not in path:
+                            new.append(path + [a])
+                            costs_new.append(cost + m[path[-1]])
+        next = new
+        costs = costs_new
+        print("       len: {:d} GLOBAL_MIN: {:d}".format(len(next), GLOBAL_MIN))
+    return GLOBAL_MIN
 
 
 def part2(m):
