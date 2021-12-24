@@ -24,7 +24,7 @@ def day19_load(fname):
 def generate(d):
     results = {}
     for i,j,k in [(0,1,2), (0,2,1), (1,2,0), (1,0,2), (2,0,1), (2,1,0)]:
-        for op in [(1, 1, 1), (-1, 1, 1), (-1, -1, 1), (-1, -1, -1)]:
+        for op in [(1, 1, 1), (-1, 1, 1), (1, -1, 1), (1, 1, -1)]:
             ret = [ [], [], [] ]
             for e in range(len(d[0])):                            
                 ret[0].append( op[0] * d[i][e])
@@ -35,7 +35,7 @@ def generate(d):
 
 
 def day19_matchaxis(orig, beacon):
-    results = []
+    results = {}
     for i in range(len(orig)):
         for j in range(len(beacon)):
             c = beacon[j] - orig[i]
@@ -45,31 +45,27 @@ def day19_matchaxis(orig, beacon):
                     if c == beacon[l] - orig[k]:
                         cpt += 1
             if cpt > 11:
-                results.append((c, cpt))
+                results[c]= cpt
     return results
 
 
 def day19_match(base, scanner):
     t = [ None, None, None, None, None, None]
     orig = base[(0, 1, 2, 1, 1, 1)]
-    for i,j,k in [(0,1,2), (0,2,1), (1,2,0), (1,0,2), (2,0,1), (2,1,0)]:
-        for op in [(1, 1, 1), (-1, 1, 1), (-1, -1, 1), (-1, -1, -1)]:
-            beacon = scanner[(i, j, k, op[0], op[1], op[2])]
-            matched = day19_matchaxis(orig[0], beacon[0])
-            if len(matched) > 0:
+
+    for o in scanner.keys():
+        i, j, k = o[0], o[1], o[2]
+        op = (o[3], o[4], o[5])
+        beacon = scanner[o]
+        for l in range(3):
+            matched = day19_matchaxis(orig[l], beacon[l])
+            trans = list(matched.keys())
+            if len(trans) > 0:
                 #print("Axis 0 Rot:({:d},{:d},{:d}) Pol:({:d},{:d},{:d}) T[0]:{:d}  matched:{:d}".format(i, j, k, op[0], op[1], op[2], matched[0][0], matched[0][1]))
-                t[0] = i
-                t[3] = op[0] * matched[0][0]
-            matched = day19_matchaxis(orig[1], beacon[1])
-            if len(matched) > 0:
-                #print("Axis 1 Rot:({:d},{:d},{:d}) Pol:({:d},{:d},{:d}) T[0]:{:d}  matched:{:d}".format(i, j, k, op[0], op[1], op[2], matched[0][0], matched[0][1]))
-                t[1] = j
-                t[4] = op[1] * matched[0][0]
-            matched = day19_matchaxis(orig[2], beacon[2])
-            if len(matched) > 0:
-                #print("Axis 2 Rot:({:d},{:d},{:d}) Pol:({:d},{:d},{:d}) T[0]:{:d}  matched:{:d}".format(i, j, k, op[0], op[1], op[2], matched[0][0], matched[0][1]))
-                t[2] = k
-                t[5] = op[2] * matched[0][0]
+                t[l] = i
+                t[3+l] = op[l] * trans[0]
+        if not None in t:
+            return t
     return t
 
 
@@ -102,14 +98,8 @@ def day19_getPath(matched, i):
 
 
 def day19_invert(m):
-    n = [ 0 for _ in range(6) ]
-    n[0] = m[2][0]
-    n[1] = m[2][1]
-    n[2] = m[2][2]
-    n[3] = -m[2][3]
-    n[4] = -m[2][4]
-    n[5] = -m[2][5]
-    return [ m[1], m[0], n ]
+    return [ m[1], m[0], 
+            [ m[2][0], m[2][1], m[2][2], -m[2][3], -m[2][4], -m[2][5]] ]
 
 
 def day19_apply(op, points):
