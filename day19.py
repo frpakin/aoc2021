@@ -1,6 +1,8 @@
 import numpy as np
 from tqdm import tqdm
 from itertools import combinations, product
+from math import copysign
+
 
 def day19_load(fname):
     data = []
@@ -53,18 +55,19 @@ def day19_compose(m, n):
     return [ n[0], m[1], p]
 
 
-def day19_getPath(matched, i):
+def day19_getPath(matched, i, depth):
     path = None
-    for m in matched:
-        if m[1] == i:
-            if m[0] == 0:
-                path = m
-                break
-            else:
-                n = day19_getPath(matched, m[0])
-                if n != None:
-                    path = day19_compose(m,  n)
+    if depth >= 0:
+        for m in matched:
+            if m[1] == i:
+                if m[0] == 0:
+                    path = m
                     break
+                else:
+                    n = day19_getPath(matched, m[0], depth-1)
+                    if n != None:
+                        path = day19_compose(m,  n)
+                        break
     return  path
 
 
@@ -82,20 +85,23 @@ def day19_apply(op, points):
     return m
 
 
+
+
+rot_init = [(1, 2, 3), (-2, 1, 3), (-1, -2, 3), (2, -1, 3), (-3, 2, 1), (-2, -3, 1), (3, -2, 1), (2, 3, 1), (-1, 2, -3), (-2, -1, -3), (1, -2, -3), (2, 1, -3), (3, 2, -1), (-2, 3, -1), (-3, -2, -1), (2, -3, -1), (1, -3, 2), (3, 1, 2), (-1, 3, 2), (-3, -1, 2), (1, 3, -2), (-3, 1, -2), (-1, -3, -2), (3, -1, -2)]
+rots = []
+for r in rot_init:
+    rots.append( [ abs(r[0])-1, abs(r[1])-1, abs(r[2])-1, int(copysign(1, r[0])), int(copysign(1, r[1])), int(copysign(1, r[2])) ] )
+
 def day19_match(base, scanner):
     t = [ None, None, None, None, None, None, None, None, None]
-    
-    rots = [[ 0, 1, 2, 1, 1, 1],
-            [1, 0, 2, 1, -1, 1], [0, 1, 2, -1, -1, 1], [1, 0, 2, -1, 1, 1],
-            [2, 1, 0, 1, 1, -1], [0, 1, 2, -1, 1, -1], [2, 1, 0, -1, 1, 1], 
-            [0, 2, 1, 1, 1, -1], [0, 1, 2, 1, -1, -1], [0, 2, 1, 1, -1, 1]]
-
-    for c in product(range(3), range(3), [1, -1]):
-        matched = day19_matchaxis(base[c[0]], c[2] * scanner[c[1]])
-        if len(matched.keys()) > 0:
-            t[c[0]] = c[1]
-            t[3+c[0]] = c[2]
-            t[6+c[0]] = list(matched.keys())[0]
+    for c in rots:
+        t = [ None, None, None, None, None, None, None, None, None]
+        for i in range(3):
+            matched = day19_matchaxis(base[i], c[3+i] * scanner[c[i]])
+            if len(matched.keys()) > 0:
+                t[i] = c[i]
+                t[3+i] = c[3+i]
+                t[6+i] = list(matched.keys())[0]
         if not None in t:
             return t
     return t
@@ -116,7 +122,7 @@ def part1(data):
     beacons = {}
     for i in range(len(data)):
         if i != 0:
-            op = day19_getPath(matched, i)
+            op = day19_getPath(matched, i, len(data))
             moved = day19_apply(op[2], data[i])
             for j in range(len(moved[0])):
                 beacons[(moved[0][j], moved[1][j], moved[2][j])] = (i, j)
