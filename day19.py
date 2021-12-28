@@ -1,6 +1,6 @@
 import numpy as np
 from tqdm import tqdm
-from itertools import combinations
+from itertools import combinations, product
 
 def day19_load(fname):
     data = []
@@ -15,23 +15,10 @@ def day19_load(fname):
                 for j in range(len(t)):
                     scan[j].append(int(t[j]))
                 s = f.readline()
-            data.append(scan)
+            data.append(np.array(scan))
             i += 1
             s = f.readline()
     return data
-
-
-def generate(d):
-    results = {}
-    for i,j,k in [(0,1,2), (0,2,1), (1,2,0), (1,0,2), (2,0,1), (2,1,0)]:
-        for op in [(1, 1, 1), (-1, 1, 1), (1, -1, 1), (1, 1, -1)]:
-            ret = [ [], [], [] ]
-            for e in range(len(d[0])):                            
-                ret[0].append( op[0] * d[i][e])
-                ret[1].append( op[1] * d[j][e])
-                ret[2].append( op[2] * d[k][e])
-            results[(i, j, k, op[0], op[1], op[2])] = np.array(ret)
-    return results
 
 
 def day19_matchaxis(orig, beacon):
@@ -46,39 +33,23 @@ def day19_matchaxis(orig, beacon):
                         cpt += 1
             if cpt > 11:
                 results[c]= cpt
+                return results
     return results
-
-
-def day19_match(base, scanner):
-    t = [ None, None, None, None, None, None]
-    orig = base[(0, 1, 2, 1, 1, 1)]
-
-    for o in scanner.keys():
-        i, j, k = o[0], o[1], o[2]
-        op = (o[3], o[4], o[5])
-        beacon = scanner[o]
-        for l in range(3):
-            matched = day19_matchaxis(orig[l], beacon[l])
-            trans = list(matched.keys())
-            if len(trans) > 0:
-                #print("Axis 0 Rot:({:d},{:d},{:d}) Pol:({:d},{:d},{:d}) T[0]:{:d}  matched:{:d}".format(i, j, k, op[0], op[1], op[2], matched[0][0], matched[0][1]))
-                t[l] = i
-                t[3+l] = op[l] * trans[0]
-        if not None in t:
-            return t
-    return t
 
 
 def day19_compose(m, n):
     pm = m[2]
     pn = n[2]
-    p = [ 0 for _ in range(6) ]
+    p = [ 0 for _ in range(9) ]
     p[0] = pm[pn[0]]
     p[1] = pm[pn[1]]
     p[2] = pm[pn[2]]
-    p[3] = pm[3+pn[0]] + pn[3]
-    p[4] = pm[3+pn[1]] + pn[4]
-    p[5] = pm[3+pn[2]] + pn[5]
+    p[3] = pm[3+pn[0]] * pn[3]
+    p[4] = pm[3+pn[1]] * pn[4]
+    p[5] = pm[3+pn[2]] * pn[5]
+    p[6] = pm[6+pn[0]] + pn[6]
+    p[7] = pm[6+pn[1]] + pn[7]
+    p[8] = pm[6+pn[2]] + pn[8]
     return [ n[0], m[1], p]
 
 
@@ -98,38 +69,50 @@ def day19_getPath(matched, i):
 
 
 def day19_invert(m):
-    return [ m[1], m[0], 
-            [ m[2][0], m[2][1], m[2][2], -m[2][3], -m[2][4], -m[2][5]] ]
+    return  [   m[1], m[0], 
+                [ m[2][0], m[2][1], m[2][2], -m[2][3], -m[2][4], -m[2][5], m[2][6], m[2][7], m[2][8]]
+            ]
 
 
 def day19_apply(op, points):
     m = [[], [], []]
     for i in range(3):
         for j in range(len(points[0])):
-            m[i].append(points[op[i]][j] + op[i+3])
+            m[i].append(points[op[i]][j] * op[i+3] + op[i+6])
     return m
 
 
-def part1(data):
-    orientations = []
-    for d in data:
-        orientations.append(generate(d))
+def day19_match(base, scanner):
+    t = [ None, None, None, None, None, None, None, None, None]
+    
+    rots = [[ 0, 1, 2, 1, 1, 1],
+            [1, 0, 2, 1, -1, 1], [0, 1, 2, -1, -1, 1], [1, 0, 2, -1, 1, 1],
+            [2, 1, 0, 1, 1, -1], [0, 1, 2, -1, 1, -1], [2, 1, 0, -1, 1, 1], 
+            [0, 2, 1, 1, 1, -1], [0, 1, 2, 1, -1, -1], [0, 2, 1, 1, -1, 1]]
 
+    for c in product(range(3), range(3), [1, -1]):
+        matched = day19_matchaxis(base[c[0]], c[2] * scanner[c[1]])
+        if len(matched.keys()) > 0:
+            t[c[0]] = c[1]
+            t[3+c[0]] = c[2]
+            t[6+c[0]] = list(matched.keys())[0]
+        if not None in t:
+            return t
+    return t
+
+
+def part1(data):
     matched = []
-    for c in tqdm(list(combinations(range(len(orientations)), 2))):
-        i, j = c[0], c[1]
-        ret = day19_match(orientations[i], orientations[j])
+    for c in tqdm(list(combinations(range(len(data)), 2))):
+        ret = day19_match(data[c[0]], data[c[1]])
         if not None in ret:
             #print("Scanner {:d} and {:d} matched".format(i, j))
-            matched.append([i, j, ret])
-
-
+            matched.append([c[0], c[1], ret])
     inverted = []
     for m in matched:
         n = day19_invert(m)
         inverted.append(n)
     matched = matched + inverted
-
     beacons = {}
     for i in range(len(data)):
         if i != 0:
@@ -144,6 +127,7 @@ def part1(data):
 if __name__ == "__main__":
     data = day19_load('day19-bs.txt')
     ret = len(part1(data))
-    print("Part 1  {:d} (79)".format(ret))        
-
-
+    print("Part 1  {:d} (79)".format(ret))
+    data = day19_load('day19-s.txt')
+    ret = len(part1(data))
+    print("Part 1  {:d} (?)".format(ret))                
