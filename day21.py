@@ -42,9 +42,35 @@ def part1(pos1, pos2, max_score):
 
 
 def part2(pos1, pos2, max_score=21):
+    scores = [ [ 0 ] * 21, [ 0 ] * 21 ] 
 
-    
-    return tt_win
+    powns =  [ [ 0 ] * 10, [ 0 ] * 10 ] 
+    powns[0][pos1-1] = 1
+    powns[1][pos2-1] = 1
+
+    dirac_dice = [ [3, 4, 5, 6 ,7, 8, 9], [1, 3, 6, 7, 6, 3, 1] ]
+
+    winner = None
+    while scores[0][20] + scores[1][20] == 0:
+        for player in range(2):
+            next_powns = [ 0 ] * 10
+            for pos in range(10):
+                for d in range(len(dirac_dice[0])):
+                    next_powns[ boardpos(pos+1, dirac_dice[0][d]) - 1 ] += powns[player][pos] * dirac_dice[1][d]
+            powns[player] = next_powns
+
+            next_scores = scores[player]
+            for pos in range(10):
+                for d in range(len(dirac_dice[0])):
+                    score = min(20, pos + dirac_dice[0][d] - 1)
+                    next_scores[score] += dirac_dice[1][d]
+            scores[player] = next_scores
+
+            if scores[player][20] > 0:
+                winner = player
+                break
+
+    return scores[winner][20]
 
 
 if __name__ == "__main__":
@@ -52,7 +78,7 @@ if __name__ == "__main__":
     print("Part 1  {:d} (739785)".format(ret))
 
     ret = part1(7, 1, 1000)
-    print("Part 1  {:d} (?)".format(ret))
+    print("Part 1  {:} (684495)".format(ret))
 
     ret = part2(4, 8)
-    print("Part 1  {:d} (444356092776315)".format(ret))
+    print("Part 2  {:d} (444356092776315)".format(ret))
