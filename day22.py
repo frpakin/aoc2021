@@ -30,67 +30,133 @@ def part1(data):
     return ret
 
 
-def intersect2(incube, cube, d):
-    return []
+def part2_load(fname):
+    data = [[], [], [], []]
+    with open(fname) as f:
+        lines = f.readlines()
+        for ll in lines:
+            l = ll.split(' ')
+            op = 1 if l[0] == 'on' else 0
+            data[3].append(op)
+            coords = l[1].strip().split(',')
+            for c in range(len(coords)):
+                d = coords[c].split('=')
+                v = d[1].split('..')
+                data[c].append([ int(v[0]), int(v[1]) ])
+    return data
 
 
-def intersect3(incube, cube, d):
-    return []
+def part2_addlength(data):
+    if len(data) == 0:
+        return 0
+    elif len(data) == 1:
+        return data[0][1] - data[0][0] + 1
+    
+    xaxis = []
+    for x in data:
+        xaxis.append(x[0])
+        xaxis.append(x[1])
+    xaxis = sorted(set(xaxis))
+    l = 0
+    x_ndx = 0
+    while(x_ndx < len(xaxis) -1):
+        x = xaxis[x_ndx]
+        x_extent = x
+        for i in range(len(data)):
+            if data[i][0] == x:
+                x_extent = max(data[i][1], x_extent)
+            if data[i][1] == x:
+                x_ndx += 1
+                break
+        if x != x_extent:
+            l += (x_extent - x) +1
+            x_ndx = xaxis.index(x_extent)
+    return l
 
 
-def intersect4(incube, cube, d):
-    v = {}
-    w = {}
-    for c, k in product(range(3), range(2)):
-        if incube[(c,k)] == True:
-            v[(c,k)] = min(d[c][k], cube[c][k]) if k == 0 else max(d[c][k], cube[c][k])
+def part2_length(lines):
+    if len(lines[0]) == 0:
+        return 0
+    if len(lines[0]) == 1:
+        return (lines[0][0][1] - lines[0][0][0])*lines[1][0]
+    start = 0
+    while start<len(lines[1]) and lines[1][start] == 0:
+        start += 1
+    if start == len(lines[1]):
+        return 0
+    line = lines[0][start]
+    xaxis = [ line.copy() ]
+    for i in range(start+1, len(lines[0])):
+        line = lines[0][i]
+        if len(xaxis) == 0:
+            if lines[1][i] == 1:
+                xaxis.append(line.copy())
         else:
-            w[(c,k)] = min(d[c][k], cube[c][k]) if k == 0 else max(d[c][k], cube[c][k])
-    return []
+            for x_ndx, x in enumerate(xaxis):
+                if (x[0] <= line[0] <= x[1]) and (x[0] <= line[1] <= x[1]):
+                    if lines[1][i] == 0:
+                        if (x[0] == line[0]) and (x[1] == line[1]): 
+                            xaxis.remove(x)
+                        else:
+                            tmp = xaxis[x_ndx][1]
+                            xaxis[x_ndx][1] = line[0]-1
+                            xaxis.insert(x_ndx+1, [line[1]+1, tmp])
+                elif (x[0] <= line[0] <= x[1]) :
+                    if lines[1][i] == 1:
+                        xaxis[x_ndx][1] = line[1]
+                    else:
+                        xaxis[x_ndx][1] = line[0]-1
+                elif (x[0] <= line[1] <= x[1]) :
+                    if lines[1][i] == 1:
+                        xaxis[x_ndx][0] = line[0]
+                    else:
+                        xaxis[x_ndx][0] = line[1]+1
+                else:
+                    if lines[1][i] == 1:
+                        xaxis[x_ndx][0] = line[0]
+                        xaxis[x_ndx][1] = line[1]
+    return part2_addlength(xaxis)
+
+
+def part2_surface(rects):
+    if len(rects[0]) == 0:
+        return 0
+    if len(rects[0]) == 1:
+        return (rects[0][0][1] - rects[0][0][0])*(rects[1][0][1] - rects[1][0][0])*rects[2][0]
+    yaxis = []
+    for y in rects[1]:
+        yaxis.append(y[0])
+        yaxis.append(y[1])
+    yaxis = sorted(set(yaxis))
+    s = 0
+    for y_ndx, y in enumerate(yaxis[0:-1]):
+        lines = [[], []]
+        for i in range(len(rects[0])):
+            if rects[1][i][0] <= y < rects[1][i][1]:
+                lines[0].append(rects[0][i])
+                lines[1].append(rects[2][i])
+        l = part2_length(lines)
+        s += (yaxis[y_ndx+1] - y) * l
+    return s
 
 
 def part2(data):
-    start = 0
-    while data[start][1] == 0:
-        start += 1
-    cubes = [ data[start] ]
-
-    for d in tqdm (data[start+1:]):
-        for i in range(len(cubes)):
-            incube = {}
-            for c, k in product(range(3), range(2)):
-                incube[(c,k)] = (d[0][c][k] >= cubes[i][0][c][0]) and (d[0][c][k] <= cubes[i][0][c][1])
-            if True in incube.values():
-                if not False in incube.values():
-                    # Case 1: fully included and 1 -> nothing to do
-                    if d[1] == 0:
-                        # Case 2: That is a hollow, we need to replace cube with 8 cubes
-                        cubes_new = intersect2(incube, cubes[i][0], d[0])
-                        cubes.remove(i)
-                        for cube_new in cubes_new:
-                            cubes.insert(cube_new, i)
-                else:
-                    #intersection
-                    if d[1] == 0:
-                        # Case 3: That is a hollow, we need to break down cuboid cubes[i] into 6 cubes
-                        cubes_new = intersect3(incube, cubes[i][0], d[0])
-                        cubes.remove(i)
-                        for cube_new in cubes_new:
-                            cubes.insert(cube_new, i)
-                    else:
-                        # Case 4: that is a partial add, we need to break d[0] in 3 cuboids
-                        cubes_new = intersect4(incube, cubes[i][0], d[0])
-                        cubes += cubes_new
-            else:
-                # Case 5: No intersect full add
-                if d[1] == 1:
-                    cube = [ [ d[0][c][0], d[0][c][1] ] for c in range(3) ]
-                    cubes.append([ cube, d[1] ])
-    
-    ret = 0
-    for i in tqdm(range(len(cubes))):
-        ret += (cubes[i][0][0][1]-cubes[i][0][0][0]) * (cubes[i][0][1][1]-cubes[i][0][1][0]) * (cubes[i][0][2][1]-cubes[i][0][2][0])
-    return ret
+    zaxis = []
+    for z in data[2]:
+        zaxis.append(z[0])
+        zaxis.append(z[1])
+    zaxis = sorted(set(zaxis))
+    v = 0
+    for z_ndx, z in tqdm(enumerate(zaxis[0:-1])):
+        rects = [[], [], []]
+        for i in range(len(data[0])):
+            if data[2][i][0] <= z < data[2][i][1]:
+                rects[0].append(data[0][i])
+                rects[1].append(data[1][i])
+                rects[2].append(data[3][i])
+        s = part2_surface(rects)
+        v += (zaxis[z_ndx+1] - z) * s
+    return v
 
 
 def part2test(data):
@@ -110,16 +176,20 @@ if __name__ == "__main__":
     ret = part1(data)
     print("Part 1  {:d} (590784)".format(ret))
 
-    data = day22_load('day22-bs.txt')
-    ret = part2(data[0:20])
-    print("Part 2/1  {:d} (590784)".format(ret))
+    data = part2_load('day22-bs.txt')
+    ret = part2([data[i][0:20] for i in range(4)])
+    print("Part 2  {:d} (590784)".format(ret))
+
+    data = part2_load('day22-s2.txt')
+    ret = part2(data)
+    print("Part 2  {:d} (2758514936282235)".format(ret))
 
     data = day22_load('day22-s.txt')
     ret = part1(data)
     print("Part 1  {:d} (527915)".format(ret))
 
-    data = day22_load('day22-s.txt')
+    data = part2_load('day22-s.txt')
     ret = part2(data)
-    print("Part 2  {:d} (?)".format(ret))
+    print("Part 2  {:d} (??????????????????)".format(ret))
 
 
