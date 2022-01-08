@@ -1,5 +1,8 @@
 from tqdm import tqdm
+from math import prod
 from itertools import product
+from sortedcontainers import SortedSet
+
 
 def day22_load(fname):
     data = []
@@ -49,8 +52,12 @@ def part2_load(fname):
 def part2_addlength(data):
     if len(data) == 0:
         return 0
-    elif len(data) == 1:
-        return data[0][1] - data[0][0] + 1
+    elif len(data[-1]) == 0:
+        return 0
+    else:
+        return data[-1][0]
+    #elif len(data) == 1:
+    #    return data[0][1] - data[0][0] + 1
     
     xaxis = []
     for x in data:
@@ -118,57 +125,39 @@ def part2_length(lines):
     return part2_addlength(xaxis)
 
 
-def part2_surface(rects):
-    if len(rects[0]) == 0:
+def part2_sub(data, ax):
+    if len(data[0]) == 0:
         return 0
-    if len(rects[0]) == 1:
-        return (rects[0][0][1] - rects[0][0][0])*(rects[1][0][1] - rects[1][0][0])*rects[2][0]
-    yaxis = []
-    for y in rects[1]:
-        yaxis.append(y[0])
-        yaxis.append(y[1])
-    yaxis = sorted(set(yaxis))
+    if len(data[0]) == 1:
+        return prod([ 1+r[0][1]-r[0][0] for r in data[:-1]]) * data[-1][0]
+        
+    axis = SortedSet([data[ax][x][i] for x,i in product(range(len(data[ax])), range(2))])
     s = 0
-    for y_ndx, y in enumerate(yaxis[0:-1]):
-        lines = [[], []]
-        for i in range(len(rects[0])):
-            if rects[1][i][0] <= y < rects[1][i][1]:
-                lines[0].append(rects[0][i])
-                lines[1].append(rects[2][i])
-        l = part2_length(lines)
-        s += (yaxis[y_ndx+1] - y) * l
+    x_ndx = 0
+    while(x_ndx < len(axis)):
+        pc = 0
+        x = axis[x_ndx]
+        lines = [ [] for _ in range(len(data)-1) ]
+        for i in range(len(data[0])):
+            if data[ax][i][0] <= x <= data[ax][i][1]:
+                for j in range(len(data)-1):
+                    lines[j].append(data[j if j<ax else j+1][i])
+            if data[ax][i][0] == x:
+                pc += 1
+            if data[ax][i][1] == x:
+                pc += -1
+        if pc > 0:
+            l = part2_addlength(lines) if ax == 0 else part2_sub(lines, ax-1)
+            dx = 1
+            if x_ndx < len(axis)-1 : 
+                dx = axis[x_ndx+1] - x
+            s += dx * l
+        x_ndx += 1
     return s
 
 
-def part2(data):
-    zaxis = []
-    for z in data[2]:
-        zaxis.append(z[0])
-        zaxis.append(z[1])
-    zaxis = sorted(set(zaxis))
-    v = 0
-    for z_ndx, z in tqdm(enumerate(zaxis[0:-1])):
-        rects = [[], [], []]
-        for i in range(len(data[0])):
-            if data[2][i][0] <= z < data[2][i][1]:
-                rects[0].append(data[0][i])
-                rects[1].append(data[1][i])
-                rects[2].append(data[3][i])
-        s = part2_surface(rects)
-        v += (zaxis[z_ndx+1] - z) * s
-    return v
-
-
-def part2test(data):
-    cubes = data
-    ret = 0
-    for i in tqdm(range(len(cubes))):
-        v = (cubes[i][0][0][1]-cubes[i][0][0][0]) * (cubes[i][0][1][1]-cubes[i][0][1][0]) * (cubes[i][0][2][1]-cubes[i][0][2][0])
-        if cubes[i][1] == 1:
-            ret += v
-        else:
-            ret -= v
-    return ret
+def part2(data, axis = 2):
+    return part2_sub(data, axis)
 
 
 if __name__ == "__main__":
@@ -179,6 +168,14 @@ if __name__ == "__main__":
     data = part2_load('day22-bs.txt')
     ret = part2([data[i][0:20] for i in range(4)])
     print("Part 2  {:d} (590784)".format(ret))
+
+    data = part2_load('day22-s3.txt')
+    ret = part2(data)
+    print("Part 2  {:d} (114660)".format(ret))
+
+    data = part2_load('day22-s4.txt')
+    ret = part2(data)
+    print("Part 2  {:d} (114661)".format(ret))
 
     data = part2_load('day22-s2.txt')
     ret = part2(data)
