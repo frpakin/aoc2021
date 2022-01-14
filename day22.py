@@ -49,121 +49,53 @@ def part2_load(fname):
     return data
 
 
-def part2_addlength(data):
-    if len(data) == 0:
-        return 0
-    elif len(data[-1]) == 0:
-        return 0
-    else:
-        return data[-1][0]
-    #elif len(data) == 1:
-    #    return data[0][1] - data[0][0] + 1
-    
-    xaxis = []
-    for x in data:
-        xaxis.append(x[0])
-        xaxis.append(x[1])
-    xaxis = sorted(set(xaxis))
-    l = 0
-    x_ndx = 0
-    while(x_ndx < len(xaxis) -1):
-        x = xaxis[x_ndx]
-        x_extent = x
-        for i in range(len(data)):
-            if data[i][0] == x:
-                x_extent = max(data[i][1], x_extent)
-            if data[i][1] == x:
-                x_ndx += 1
-                break
-        if x != x_extent:
-            l += (x_extent - x) +1
-            x_ndx = xaxis.index(x_extent)
-    return l
-
-
-def part2_length(lines):
-    if len(lines[0]) == 0:
-        return 0
-    if len(lines[0]) == 1:
-        return (lines[0][0][1] - lines[0][0][0])*lines[1][0]
-    start = 0
-    while start<len(lines[1]) and lines[1][start] == 0:
-        start += 1
-    if start == len(lines[1]):
-        return 0
-    line = lines[0][start]
-    xaxis = [ line.copy() ]
-    for i in range(start+1, len(lines[0])):
-        line = lines[0][i]
-        if len(xaxis) == 0:
-            if lines[1][i] == 1:
-                xaxis.append(line.copy())
-        else:
-            for x_ndx, x in enumerate(xaxis):
-                if (x[0] <= line[0] <= x[1]) and (x[0] <= line[1] <= x[1]):
-                    if lines[1][i] == 0:
-                        if (x[0] == line[0]) and (x[1] == line[1]): 
-                            xaxis.remove(x)
-                        else:
-                            tmp = xaxis[x_ndx][1]
-                            xaxis[x_ndx][1] = line[0]-1
-                            xaxis.insert(x_ndx+1, [line[1]+1, tmp])
-                elif (x[0] <= line[0] <= x[1]) :
-                    if lines[1][i] == 1:
-                        xaxis[x_ndx][1] = line[1]
-                    else:
-                        xaxis[x_ndx][1] = line[0]-1
-                elif (x[0] <= line[1] <= x[1]) :
-                    if lines[1][i] == 1:
-                        xaxis[x_ndx][0] = line[0]
-                    else:
-                        xaxis[x_ndx][0] = line[1]+1
-                else:
-                    if lines[1][i] == 1:
-                        xaxis[x_ndx][0] = line[0]
-                        xaxis[x_ndx][1] = line[1]
-    return part2_addlength(xaxis)
-
-
-def part2_sub(data, ax):
+def part2_sub(data, ax, bar):
     if len(data[0]) == 0:
         return 0
     if len(data[0]) == 1:
         return prod([ 1+r[0][1]-r[0][0] for r in data[:-1]]) * data[-1][0]
-        
-    axis = SortedSet([data[ax][x][i] for x,i in product(range(len(data[ax])), range(2))])
+    
+    xa=[data[ax][x][i] for x,i in product(range(len(data[ax])), range(2))]
+    xb=[data[ax][x][1]+1 for x in range(len(data[ax]))]
+    axis = SortedSet(xa + xb)
     s = 0
-    x_ndx = 0
-    while(x_ndx < len(axis)):
-        pc = 0
+    for x_ndx in range(len(axis)):
         x = axis[x_ndx]
         lines = [ [] for _ in range(len(data)-1) ]
         for i in range(len(data[0])):
             if data[ax][i][0] <= x <= data[ax][i][1]:
                 for j in range(len(data)-1):
                     lines[j].append(data[j if j<ax else j+1][i])
-            if data[ax][i][0] == x:
-                pc += 1
-            if data[ax][i][1] == x:
-                pc += -1
-        if pc > 0:
-            l = part2_addlength(lines) if ax == 0 else part2_sub(lines, ax-1)
-            dx = 1
-            if x_ndx < len(axis)-1 : 
-                dx = axis[x_ndx+1] - x
-            s += dx * l
-        x_ndx += 1
+        dx = axis[x_ndx+1] - x if x_ndx < len(axis)-1 else 1
+        if ax != 0:
+            l = part2_sub(lines, ax-1, bar)
+        else :
+            if len(lines)>0 and len(lines[-1])>0:
+                l = lines[-1][-1]
+            else:
+                l = 0 
+        s += dx * l
+        if ax==2:
+            bar.update(1)
     return s
 
 
 def part2(data, axis = 2):
-    return part2_sub(data, axis)
+    xa=[data[axis][x][i] for x,i in product(range(len(data[axis])), range(2))]
+    xb=[data[axis][x][1]+1 for x in range(len(data[axis]))]
+    axis_tmp = SortedSet(xa + xb)
+    bar = tqdm(total=len(axis_tmp))
+    return part2_sub(data, axis, bar=bar)
 
 
 if __name__ == "__main__":
     data = day22_load('day22-bs.txt')
     ret = part1(data)
     print("Part 1  {:d} (590784)".format(ret))
+
+    data = part2_load('day22-s5.txt')
+    ret = part2([data[i][0:20] for i in range(4)])
+    print("Part 2  {:d} (39)".format(ret))
 
     data = part2_load('day22-bs.txt')
     ret = part2([data[i][0:20] for i in range(4)])
@@ -187,6 +119,6 @@ if __name__ == "__main__":
 
     data = part2_load('day22-s.txt')
     ret = part2(data)
-    print("Part 2  {:d} (??????????????????)".format(ret))
+    print("Part 2  {:d} (1218645427221987)".format(ret))
 
 
