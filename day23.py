@@ -54,13 +54,41 @@ def day23_show1(G, widths):
 def day23_end(state):
     return state[0] in [2, 3] and state[1] in [2, 3] and state[2] in [5, 6] and state[3] in [5, 6] and state[4] in [8, 9] and state[5] in [8, 9] and state[6] in [11, 12] and state[7] in [11, 12]
 
+def day23_privacy_old(i):
+    privy = {   0: [5, 6, 8, 9, 11, 12], 1: [5, 6, 8, 9, 11, 12],
+                2: [2, 3, 8, 9, 11, 12], 3: [2, 3, 8, 9, 11, 12],
+                4: [2, 3, 5, 6, 11, 12], 5: [2, 3, 5, 6, 11, 12],
+                6: [2, 3, 5, 6, 8, 9],   7: [2, 3, 5, 6, 8, 9] }                
+    return privy[i]
+
+
+def amphy_type(i):
+    amphy = ( 'A', 'A', 'B', 'B', 'C', 'C', 'D', 'D')
+    return amphy[i]
+
+
+def day23_privacy(i, root, a):
+    ret = True
+    rooms = [ 2, 5, 8, 11 ]
+    final = {   0: [2, 3], 1: [2, 3],
+                2: [5, 6], 3: [5, 6],
+                4: [8, 9], 5: [8, 9],
+                6: [11, 12], 7: [11, 12],
+    }
+    if a in rooms and a in final[i]:
+        try:
+            coloc = root.index(final[i][1])
+            ret = amphy_type(i) == amphy_type(coloc)
+        except:
+            ret = True
+    return ret
 
 def day23_part1_sub(G, costs, rootcost):
     ret = []
     root = rootcost[0]
     for i in range(len(root)):
         s = root[i]
-        avail = [ n for n in list(G.adj[s]) if n not in root ]
+        avail = [ n for n in list(G.adj[s]) if n not in root and day23_privacy(i, root, n) ]
         for a in avail:
             new_cost = rootcost[1] + G.edges[s, a]['weight'] * costs[i]
             new_state = list(root)
@@ -72,24 +100,24 @@ def day23_part1_sub(G, costs, rootcost):
 
 def day23_part1(G, state, costs, limit_iter = 1000000):
     bar = tqdm(total=limit_iter)
-    todo = [ (tuple(state), 0) ]
+    todo = { tuple(state): 0 }
     done = {}
     success = []
     while len(todo)>0 and bar.n<limit_iter:
         bar.update(1)
-        root = todo.pop(0)
+        root = todo.popitem()
         done[root[0]] = min(root[1], done.get(root[0], math.inf))
         if day23_end(root[0]):
             success.append(root)
         else:
             for n in day23_part1_sub(G, costs, root):
-                if not n[0] in done:
-                    todo.append(n)
+                if not n[0] in done.keys():
+                    todo[n[0]] = min(n[1], todo.get(n[0], math.inf))
     return success
 
 
 def day23_result(s):
-    ret = -1 if len(s)>0 else math.inf
+    ret = -1 if len(s)==0 else math.inf
     for n in s:
         ret = min(ret, n[1])
     return ret
@@ -97,9 +125,6 @@ def day23_result(s):
 
 if __name__ == "__main__":
     G = day23_load()
-    s = day23_part1(G, [ 2, 3, 5, 6, 8, 9, 11, 12 ], [ 1, 1, 10, 10, 100, 100, 1000, 1000 ])
-    ret = day23_result(s)
-    print("Part 1  {:d} (0)".format(ret))
     s = day23_part1(G, [ 3, 12, 2, 8, 5, 9, 6, 11 ], [ 1, 1, 10, 10, 100, 100, 1000, 1000 ])
     ret = day23_result(s)
     print("Part 1  {:d} (12521)".format(ret))
