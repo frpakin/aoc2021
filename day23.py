@@ -1,11 +1,12 @@
 import math
 from collections import defaultdict
-from sortedcontainers import SortedKeyList
+import string
+from sortedcontainers import SortedKeyList, SortedSet
 from tqdm import tqdm
 import networkx as nx
 import matplotlib.pyplot as plt
 
-def day23_load():
+def day23_load() -> nx.Graph:
     G = nx.Graph()
     G.add_nodes_from(range(15))
     G.add_edges_from( [ (0, 1, {'weight': 1}), 
@@ -28,7 +29,7 @@ def day23_load():
                         (13, 14, {'weight': 1}) ] )
     return G
 
-def day23_load2():
+def day23_load2() -> nx.Graph:
     G = nx.Graph()
     G.add_nodes_from(range(23))
     G.add_edges_from( [ (0, 1, {'weight': 1}), 
@@ -61,7 +62,7 @@ def day23_load2():
     return G
 
 
-def day23_show1(G, widths):
+def day23_show1(G, widths) -> None:
     esizes = []
     for w in widths:
         esizes.append([(u, v) for (u, v, d) in G.edges(data=True) if w[0] <= d["weight"] < w[1]])
@@ -83,12 +84,7 @@ def day23_show1(G, widths):
     plt.tight_layout()
     plt.show()
 
-
-def day23_end_old(state):
-    return state[0] in [2, 3] and state[1] in [2, 3] and state[2] in [5, 6] and state[3] in [5, 6] and state[4] in [8, 9] and state[5] in [8, 9] and state[6] in [11, 12] and state[7] in [11, 12]
-
-
-def day23_end(state):
+def day23_end(state) -> bool:
     finals = {  0: [2, 3, 15, 16],
                 1: [5, 6, 17, 18],
                 2: [8, 9, 19, 20],
@@ -97,12 +93,12 @@ def day23_end(state):
     return all([ v in finals[i//pop] for i, v in enumerate(state) ] )
 
 
-def amphy_type(i, pop=2):
+def amphy_type(i, pop=2) -> string:
     amphy = ('A', 'B', 'C', 'D')
     return amphy[i//pop]
 
 
-def day23_privacy(i, root, a):    
+def day23_privacy(i, root, a) -> bool:    
     doors = [ 2, 5, 8, 11 ]
     hallway = [ 0, 1, 4, 7, 10, 13, 14 ]
     locks = {   0: 2, 1: 2,
@@ -132,7 +128,7 @@ def day23_privacy(i, root, a):
     return ret
 
 
-def day23_privacy2(i, root, a):    
+def day23_privacy2(i, root, a) -> bool:    
     doors = [ 2, 5, 8, 11 ]
     hallway = [ 0, 1, 4, 7, 10, 13, 14 ]
     locks = {   0: 2, 1: 5,
@@ -160,7 +156,7 @@ def day23_privacy2(i, root, a):
     return ret
 
 
-def day23_part1_sub(G, costs, root):
+def day23_part1_sub(G, costs, root) -> list:
     ret = []
     for i in range(len(root[0])):
         s = root[0][i]
@@ -172,26 +168,7 @@ def day23_part1_sub(G, costs, root):
     return ret
 
 
-def day23_part1_old(G, state, costs, limit_iter = 10000000):
-    todo = SortedKeyList(key=lambda x:x[1])
-    todo.add((tuple(state), 0))
-    done = defaultdict(list)
-    success = SortedKeyList(key=lambda x:x[1])
-    with tqdm() as bar:
-        while len(todo)>0 and bar.n<limit_iter:
-            bar.update(1)
-            root = todo.pop(0)
-            done[root[0]].append(root[1])
-            if day23_end(root[0]):
-                success.add((root[0], min(done[root[0]])))
-                bar.set_description("{1}({0})".format(len(success), success[0][1]))
-            else:           
-                nexts = [ n for n in day23_part1_sub(G, costs, root) if n[0] not in done.keys()] 
-                todo.update(nexts)
-            bar.total = len(todo) + len(done)
-    return success
-
-def day23_part1(G, state, costs):
+def day23_part1(G, state, costs) -> list:
     start = tuple(state)
 
     gscore = defaultdict(lambda : math.inf)
@@ -200,10 +177,11 @@ def day23_part1(G, state, costs):
     fscore = defaultdict(lambda : math.inf)
     fscore[start] = 0
 
-    openSet = SortedKeyList(key=lambda x:fscore[x])
+    openSet = SortedSet(key=lambda x:fscore[x])
     openSet.add( start )
     
-    cameFrom = {}
+    #cameFrom = {}
+    results = []
 
     with tqdm() as bar:
         while len(openSet) > 0:
@@ -211,30 +189,27 @@ def day23_part1(G, state, costs):
             current = openSet.pop(0)
             
             if day23_end(current):
-                return [ ( current, fscore[current]) ]
+                results.append((current, fscore[current]))
 
             neighbors = []
             d = {}
             for i, s in enumerate(current):
                 avail = [ n for n in list(G.adj[s]) if n not in current and day23_privacy(i, current, n) ]
                 for a in avail:
-                    new_state = [ a if k==i else current[k] for k in range(len(current)) ]
-                    neighbor = tuple(new_state)
+                    neighbor = tuple([ a if k==i else currentk for k, currentk in enumerate(current) ])
                     neighbors.append(neighbor)
                     d[neighbor] = G.edges[s, a]['weight'] * costs[i]
-
 
             for neighbor in neighbors:
                 tentative_gScore = gscore[current] + d[neighbor]
                 if tentative_gScore < gscore[neighbor]:
                     # This path to neighbor is better than any previous one. Record it!
-                    cameFrom[neighbor] = current
+                    # cameFrom[neighbor] = current
                     gscore[neighbor] = tentative_gScore
                     fscore[neighbor] = tentative_gScore # + h(neighbor, costs)
-                    if neighbor not in openSet:
-                        openSet.add(neighbor)
+                    openSet.add(neighbor)
             bar.total = len(openSet) + len(gscore)
-    return []
+    return results
 
 
 def day23_part2(G, state, costs):
@@ -246,10 +221,9 @@ def day23_part2(G, state, costs):
     fscore = defaultdict(lambda : math.inf)
     fscore[start] = 0
 
-    openSet = SortedKeyList(key=lambda x:fscore[x])
+    openSet = SortedSet(key=lambda x:fscore[x])
     openSet.add( start )
-    
-    cameFrom = {}
+    results = []
 
     with tqdm() as bar:
         while len(openSet) > 0:
@@ -257,7 +231,7 @@ def day23_part2(G, state, costs):
             current = openSet.pop(0)
             
             if day23_end(current):
-                return [ ( current, fscore[current]) ]
+                results.append((current, fscore[current]))
 
             neighbors = []
             d = {}
@@ -273,14 +247,12 @@ def day23_part2(G, state, costs):
             for neighbor in neighbors:
                 tentative_gScore = gscore[current] + d[neighbor]
                 if tentative_gScore < gscore[neighbor]:
-                    # This path to neighbor is better than any previous one. Record it!
-                    cameFrom[neighbor] = current
+                    # This path to neighbor is better than any previous one. Record it!                    
                     gscore[neighbor] = tentative_gScore
                     fscore[neighbor] = tentative_gScore # + h(neighbor, costs)
-                    if neighbor not in openSet:
-                        openSet.add(neighbor)
+                    openSet.add(neighbor)
             bar.total = len(openSet) + len(gscore)
-    return []
+    return results
 
 def h(neighbor, costs):
     ret = 0
@@ -300,19 +272,26 @@ def h(neighbor, costs):
                     [9, 7, 5, 0],
                     [8, 6, 4, 2],                    
                     [9, 7, 5, 3] ]
-    for i in range(len(neighbor)):
-        ret += heuristic[neighbor[i]][target[i]] * costs[i]
-    return ret
+    #for i in range(len(neighbor)):
+    #    ret += heuristic[neighbor[i]][target[i]] * costs[i]
+    return sum( [ heuristic[n][target[i]] * costs[i] for i,n in enumerate(neighbor) ] )
 
 
-def day23_result(s):
-    ret = -1 if len(s)==0 else math.inf
-    for n in s:
-        ret = min(ret, n[1])
-    return ret
+def day23_result(s, empty=-1):
+    return empty if len(s)==0 else min([n[1] for n in s])
 
 
 if __name__ == "__main__":
+
+    G = day23_load()
+    #s = day23_part1(G, [ 3, 12, 2, 8, 5, 9, 6, 11 ], [ 1, 1, 10, 10, 100, 100, 1000, 1000 ])
+    #ret = day23_result(s)
+    #print("Part 1  {:d} (12521)".format(ret))
+    #s = day23_part1(G, [ 2, 11, 8, 9, 5, 12, 3, 6 ], [ 1, 1, 10, 10, 100, 100, 1000, 1000 ])
+    #ret = day23_result(s)
+    #print("Part 1  {:d} (18195)".format(ret))
+
+
 
     G = day23_load2()
     s = day23_part2(G, [ 16, 12, 22, 19, 2, 17, 8, 9, 5, 6, 20, 21, 3, 15, 18, 11 ], [ 1, 1, 1, 1, 10, 10, 10, 10, 100, 100, 100, 100, 1000, 1000, 1000, 1000 ])
